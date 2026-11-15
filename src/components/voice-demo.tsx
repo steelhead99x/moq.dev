@@ -12,6 +12,7 @@ import type MoqWatch from "@moq/watch/element";
 import { createSignal, onCleanup, Show } from "solid-js";
 import { type AgentRecord, CallLog } from "./voice/call";
 import Cat from "./voice/cat";
+import { endTranscript } from "./voice/goodbye";
 import Transcript, { type Turn } from "./voice/transcript";
 
 // Load the worklets the build emits to /assets/ rather than blob: URLs.
@@ -229,10 +230,10 @@ export default function VoiceDemo() {
 		if (call) {
 			for (const timer of call.timers) clearTimeout(timer);
 			clearInterval(call.ticker);
-			// The agent hangs up at once on this, instead of waiting for us to redial. Unmounting
-			// right after is safe: the cleanly finished track still goes out, since closing the
-			// connection drains it rather than cutting it off.
-			send(call, { label: "moq-transport", type: "session-ending" });
+			// The agent hangs up at once on this, instead of waiting for us to redial.
+			// Finish the group before <moq-publish> leaves the document. Disconnect only
+			// queues the broadcast's close, and that close aborts a group that is still open.
+			endTranscript(call, { label: "moq-transport", type: "session-ending" });
 			setMounted(undefined);
 		}
 		setRemaining(undefined);
