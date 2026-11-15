@@ -14,9 +14,16 @@ The page no longer waits before unmounting `<moq-publish>`, and the pinned
 record goes out whenever the connection closes. A local relay test with the
 connection closed at once delivered it every time; swapping the drain back
 to an abort lost it every time. That test lives in moq's reload teardown
-suite. It does not read the demo agent's log. The shared pool still lingers 2 s
-(`LINGER_MS` in `moq/js/net/src/connection/pool.ts`) before that close, and
-the finished track keeps sending during the linger.
+suite. It does not read the demo agent's log.
+
+The transcript log is one group. Closing the broadcast aborts a group that
+is still open, so the record never leaves. `endTranscript` finishes the
+group before `<moq-publish>` unmounts. Disconnect only queues that close,
+and the page effect finishes first, in the same turn. The shared pool then
+keeps the session for 2 s (`LINGER_MS` in
+`moq/js/net/src/connection/pool.ts`) and drains the finished track.
+`src/components/voice/goodbye.test.ts` covers a close before the finish,
+which drops the record, and the unmount order, which delivers it.
 
 ## Waiting
 
